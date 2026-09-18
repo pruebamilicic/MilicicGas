@@ -288,7 +288,7 @@ function validateForm() {
 /* =====================================================
    URL DE GOOGLE APPS SCRIPT
 ===================================================== */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwu5u9btNSNlvlWfp-qgzaRL6Jyz1nsIWz_2fdnMfYxlvXsvrAEZbrAS-7iYigBlV61/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzxPOD1uBWv9ucQhH_exv1vQTZWkVjekWJ7J-y3KUjKNjMGtN3EEaArTh2InOeqCVdT/exec";
 
 /* =====================================================
    FUEGOS ARTIFICIALES
