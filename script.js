@@ -595,7 +595,10 @@ document.getElementById("confirmSendBtn").addEventListener("click", async functi
       
       const enlaceDescarga = document.createElement("a");
       enlaceDescarga.href = imagenBase64;
-      enlaceDescarga.download = "captura_formulario_milicic.png"; 
+      
+      // Usa el número de comprobante guardado en pendingPayload
+      enlaceDescarga.download = `Comprobante_${pendingPayload.comprobante}.png`; 
+      
       document.body.appendChild(enlaceDescarga);
       enlaceDescarga.click();
       document.body.removeChild(enlaceDescarga);
