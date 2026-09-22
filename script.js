@@ -582,6 +582,30 @@ document.getElementById("confirmSendBtn").addEventListener("click", async functi
   confirmBtn.disabled = true;
   confirmBtn.textContent = "ENVIANDO...";
 
+  // ==========================================================
+  // CÓDIGO DE PRUEBA: DESCARGAR CAPTURA EN LA PC
+  // ==========================================================
+  try {
+      const modalElement = document.querySelector(".confirm-card");
+      const canvasModal = await html2canvas(modalElement, { backgroundColor: "#ffffff" });
+      const imagenBase64 = canvasModal.toDataURL("image/png");
+      
+      // Simular un clic para descargar la imagen localmente
+      const enlaceDescarga = document.createElement("a");
+      enlaceDescarga.href = imagenBase64;
+      enlaceDescarga.download = "captura_modal_prueba.png"; // Nombre del archivo de prueba
+      document.body.appendChild(enlaceDescarga);
+      enlaceDescarga.click();
+      document.body.removeChild(enlaceDescarga);
+      
+      console.log("Captura generada y descargada con éxito.");
+  } catch (error) {
+      console.error("Error al generar captura del modal:", error);
+  }
+  // ==========================================================
+  // FIN CÓDIGO DE PRUEBA
+  // ==========================================================
+
   // Envío a Google Apps Script con text/plain para evitar bloqueos CORS
   fetch(SCRIPT_URL, {
     method: "POST",
