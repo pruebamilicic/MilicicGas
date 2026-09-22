@@ -583,27 +583,29 @@ document.getElementById("confirmSendBtn").addEventListener("click", async functi
   confirmBtn.textContent = "ENVIANDO...";
 
   // ==========================================================
-  // CÓDIGO DE PRUEBA: DESCARGAR CAPTURA EN LA PC
+  // CÓDIGO DE DESCARGA: CAPTURA DEL FORMULARIO PRINCIPAL
   // ==========================================================
   try {
-      const modalElement = document.querySelector(".confirm-card");
-      const canvasModal = await html2canvas(modalElement, { backgroundColor: "#ffffff" });
-      const imagenBase64 = canvasModal.toDataURL("image/png");
+      const formElement = document.querySelector(".card"); 
+      const canvasForm = await html2canvas(formElement, { 
+          backgroundColor: "#f2f4f8",
+          scale: 2 
+      });
+      const imagenBase64 = canvasForm.toDataURL("image/png");
       
-      // Simular un clic para descargar la imagen localmente
       const enlaceDescarga = document.createElement("a");
       enlaceDescarga.href = imagenBase64;
-      enlaceDescarga.download = "captura_modal_prueba.png"; // Nombre del archivo de prueba
+      enlaceDescarga.download = "captura_formulario_milicic.png"; 
       document.body.appendChild(enlaceDescarga);
       enlaceDescarga.click();
       document.body.removeChild(enlaceDescarga);
       
-      console.log("Captura generada y descargada con éxito.");
+      console.log("Captura del formulario generada y descargada con éxito.");
   } catch (error) {
-      console.error("Error al generar captura del modal:", error);
+      console.error("Error al generar captura del formulario:", error);
   }
   // ==========================================================
-  // FIN CÓDIGO DE PRUEBA
+  // FIN CÓDIGO DE DESCARGA
   // ==========================================================
 
   // Envío a Google Apps Script con text/plain para evitar bloqueos CORS
