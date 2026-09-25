@@ -678,9 +678,10 @@ async function procesarYEnviarCarga() {
     confirmBtn.textContent = "ENVIANDO...";
   }
 
-  // 1. Obtener el número de comprobante actual
-  const comprobanteNum = document.getElementById("receiptNumber") 
-    ? document.getElementById("receiptNumber").value 
+  // 1. Obtener el número de comprobante actual (leyendo textContent)
+  const comprobanteElem = document.getElementById("receiptNumber");
+  const comprobanteNum = comprobanteElem 
+    ? (comprobanteElem.textContent || comprobanteElem.value) 
     : (pendingPayload ? pendingPayload.comprobante : "36920");
 
   // 2. Ocultar temporalmente los botones que no deben salir en la imagen
@@ -690,22 +691,22 @@ async function procesarYEnviarCarga() {
   if (btnRegistrar) btnRegistrar.style.visibility = "hidden";
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "hidden";
 
-  // 3. Tomar la captura de todo el formulario (.form-container o la etiqueta <form>)
+  // 3. Tomar la captura de todo el formulario
   try {
     const formElement = document.querySelector(".form-container") || document.querySelector("form") || document.body;
     
     const canvas = await html2canvas(formElement, {
       backgroundColor: "#ffffff",
-      scale: 2, // Buena calidad de imagen
+      scale: 2,
       useCORS: true,
-      scrollY: -window.scrollY // Asegura capturar desde el inicio de la página
+      scrollY: -window.scrollY
     });
 
-    // 4. Descargar la imagen con el nombre exacto "carga_NUMERO.png"
+    // 4. Descargar la imagen
     const imagenData = canvas.toDataURL("image/png");
     const linkDescarga = document.createElement("a");
     linkDescarga.href = imagenData;
-    linkDescarga.download = `carga_${comprobanteNum}.png`; // Ejemplo: carga_36920.png
+    linkDescarga.download = `carga_${comprobanteNum}.png`;
     document.body.appendChild(linkDescarga);
     linkDescarga.click();
     document.body.removeChild(linkDescarga);
@@ -713,7 +714,6 @@ async function procesarYEnviarCarga() {
   } catch (err) {
     console.error("Error al generar la captura:", err);
   } finally {
-    // Volver a hacer visibles los botones
     if (btnRegistrar) btnRegistrar.style.visibility = "visible";
     if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "visible";
   }
@@ -743,6 +743,7 @@ async function procesarYEnviarCarga() {
   }
   pendingPayload = null;
 }
+
 /* =====================================================
    CERRAR MENSAJE
 ===================================================== */
@@ -754,3 +755,10 @@ function closeSuccess() {
   hasSignature = false;
   placeholder.style.display = "block";
 }
+
+/* =====================================================
+   EVENT LISTENERS DE BOTONES Y MODALES
+===================================================== */
+document.getElementById("confirmSendBtn")?.addEventListener("click", procesarYEnviarCarga);
+document.getElementById("cancelConfirmBtn")?.addEventListener("click", closeConfirm);
+document.getElementById("closeSuccessBtn")?.addEventListener("click", closeSuccess);
