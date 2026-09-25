@@ -1053,18 +1053,16 @@ body::after {
         height: 58px;
         font-size: 18px;
     }
-   /* =====================================================
-   ELIMINAR DEFINITIVAMENTE FONDO CELESTE DE AUTOCOMPLETADO
-===================================================== */
-input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
-input:-webkit-autofill:active,
-input:autofill {
-    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-    box-shadow: 0 0 0 1000px #ffffff inset !important;
-    -webkit-text-fill-color: #2b3038 !important;
-    caret-color: #2b3038 !important;
-    transition: background-color 50000s ease-in-out 0s !important;
-}
+
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus, 
+    input:-webkit-autofill:active,
+    input:autofill {
+        -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+        box-shadow: 0 0 0 1000px #ffffff inset !important;
+        -webkit-text-fill-color: #2b3038 !important;
+        caret-color: #2b3038 !important;
+        transition: background-color 50000s ease-in-out 0s !important;
+    }
 }
