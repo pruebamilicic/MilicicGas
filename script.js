@@ -734,7 +734,7 @@ async function procesarYEnviarCarga() {
   const API_KEY = "9974488";
 
   if (pendingPayload && pendingPayload.nombre) {
-    const mensajeWA = `${pendingPayload.nombre} completo la cargar`;
+    const mensajeWA = `${pendingPayload.nombre} completo la cargar de gasoil`;
     const urlWA = `https://api.callmebot.com/whatsapp.php?phone=${PHONE_NUMBER}&text=${encodeURIComponent(mensajeWA)}&apikey=${API_KEY}`;
     
     fetch(urlWA, { mode: "no-cors" }).catch(err => console.error("Error enviando WhatsApp:", err));
