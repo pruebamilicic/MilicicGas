@@ -669,62 +669,80 @@ function closeConfirm() {
 }
 
 /* =====================================================
-   CONFIRMACIÓN Y ENVÍO A GOOGLE SHEETS CON CAPTURA
+   CAPTURA COMPLETA DEL FORMULARIO Y ENVÍO A SHEETS
 ===================================================== */
-document.getElementById("confirmSendBtn").addEventListener("click", async function() {
-  if (!pendingPayload) return;
-
-  if (!navigator.onLine) {
-    alert("No tenés conexión a internet. Verificá tu red e intentá nuevamente.");
-    return;
+async function procesarYEnviarCarga() {
+  const confirmBtn = document.getElementById("confirmSendBtn");
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "ENVIANDO...";
   }
 
-  const confirmBtn = this;
-  confirmBtn.disabled = true;
-  confirmBtn.textContent = "ENVIANDO...";
+  // 1. Obtener el número de comprobante actual
+  const comprobanteNum = document.getElementById("receiptNumber") 
+    ? document.getElementById("receiptNumber").value 
+    : (pendingPayload ? pendingPayload.comprobante : "36920");
 
-  // 1. Descarga de captura de pantalla rápida del modal
+  // 2. Ocultar temporalmente los botones que no deben salir en la imagen
+  const btnRegistrar = document.querySelector(".btn-submit") || confirmBtn;
+  const btnLimpiarFirma = document.getElementById("clearSignature");
+  
+  if (btnRegistrar) btnRegistrar.style.visibility = "hidden";
+  if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "hidden";
+
+  // 3. Tomar la captura de todo el formulario (.form-container o la etiqueta <form>)
   try {
-    const modalElement = document.querySelector(".confirm-card");
-    const canvasModal = await html2canvas(modalElement, { 
-      backgroundColor: "#ffffff",
-      scale: 1.5 // Balance ideal entre velocidad y buena calidad
-    });
+    const formElement = document.querySelector(".form-container") || document.querySelector("form") || document.body;
     
-    const imagenBase64 = canvasModal.toDataURL("image/png");
-    const enlaceDescarga = document.createElement("a");
-    enlaceDescarga.href = imagenBase64;
-    enlaceDescarga.download = "comprobante_" + pendingPayload.comprobante + ".png";
-    document.body.appendChild(enlaceDescarga);
-    enlaceDescarga.click();
-    document.body.removeChild(enlaceDescarga);
-  } catch (error) {
-    console.error("Error al generar la captura:", error);
+    const canvas = await html2canvas(formElement, {
+      backgroundColor: "#ffffff",
+      scale: 2, // Buena calidad de imagen
+      useCORS: true,
+      scrollY: -window.scrollY // Asegura capturar desde el inicio de la página
+    });
+
+    // 4. Descargar la imagen con el nombre exacto "carga_NUMERO.png"
+    const imagenData = canvas.toDataURL("image/png");
+    const linkDescarga = document.createElement("a");
+    linkDescarga.href = imagenData;
+    linkDescarga.download = `carga_${comprobanteNum}.png`; // Ejemplo: carga_36920.png
+    document.body.appendChild(linkDescarga);
+    linkDescarga.click();
+    document.body.removeChild(linkDescarga);
+
+  } catch (err) {
+    console.error("Error al generar la captura:", err);
+  } finally {
+    // Volver a hacer visibles los botones
+    if (btnRegistrar) btnRegistrar.style.visibility = "visible";
+    if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "visible";
   }
 
-  // 2. Envío a Google Apps Script en segundo plano
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    keepalive: true,
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    },
-    body: JSON.stringify(pendingPayload)
-  }).catch(err => {
-    console.error("Error al guardar en Google Sheets:", err);
-  });
+  // 5. Enviar los datos a Google Sheets
+  if (typeof SCRIPT_URL !== "undefined" && pendingPayload) {
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      keepalive: true,
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(pendingPayload)
+    }).catch(err => console.error("Error en Sheets:", err));
+  }
 
-  // 3. Respuesta e interfaz de éxito
-  incrementReceiptNumber();
-  closeConfirm();
-  document.getElementById("successMessage").style.display = "flex";
-  startFireworks();
+  // 6. Finalizar proceso e interfaz de éxito
+  if (typeof incrementReceiptNumber === "function") incrementReceiptNumber();
+  if (typeof closeConfirm === "function") closeConfirm();
+  
+  const successMsg = document.getElementById("successMessage");
+  if (successMsg) successMsg.style.display = "flex";
+  if (typeof startFireworks === "function") startFireworks();
 
-  confirmBtn.disabled = false;
-  confirmBtn.textContent = "CONFIRMAR Y ENVIAR";
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = "CONFIRMAR Y ENVIAR";
+  }
   pendingPayload = null;
-});
+}
 /* =====================================================
    CERRAR MENSAJE
 ===================================================== */
