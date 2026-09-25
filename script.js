@@ -671,6 +671,9 @@ function closeConfirm() {
 /* =====================================================
    CAPTURA COMPLETA DEL FORMULARIO Y ENVÍO A SHEETS
 ===================================================== */
+/* =====================================================
+   CAPTURA COMPLETA DEL FORMULARIO Y ENVÍO A SHEETS + WHATSAPP
+===================================================== */
 async function procesarYEnviarCarga() {
   const confirmBtn = document.getElementById("confirmSendBtn");
   if (confirmBtn) {
@@ -678,47 +681,47 @@ async function procesarYEnviarCarga() {
     confirmBtn.textContent = "ENVIANDO...";
   }
 
-  // 1. Obtener el número de comprobante actual (leyendo textContent)
+  // 1. Obtener el número de comprobante actual
   const comprobanteElem = document.getElementById("receiptNumber");
   const comprobanteNum = comprobanteElem 
     ? (comprobanteElem.textContent || comprobanteElem.value) 
     : (pendingPayload ? pendingPayload.comprobante : "36920");
 
-  // 2. Ocultar temporalmente los botones que no deben salir en la imagen
+  // 2. Ocultar temporalmente los botones para la captura
   const btnRegistrar = document.querySelector(".btn-submit") || confirmBtn;
   const btnLimpiarFirma = document.getElementById("clearSignature");
   
   if (btnRegistrar) btnRegistrar.style.visibility = "hidden";
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "hidden";
 
-  // 3. Tomar la captura de todo el formulario
-  try {
-    const formElement = document.querySelector(".form-container") || document.querySelector("form") || document.body;
-    
-    const canvas = await html2canvas(formElement, {
-      backgroundColor: "#ffffff",
-      scale: 2,
-      useCORS: true,
-      scrollY: -window.scrollY
-    });
+  // 3. Captura de pantalla (si html2canvas no está cargado en el HTML, no frena el flujo)
+  if (typeof html2canvas !== "undefined") {
+    try {
+      const formElement = document.querySelector(".form-container") || document.querySelector("form") || document.body;
+      
+      const canvas = await html2canvas(formElement, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+        scrollY: -window.scrollY
+      });
 
-    // 4. Descargar la imagen
-    const imagenData = canvas.toDataURL("image/png");
-    const linkDescarga = document.createElement("a");
-    linkDescarga.href = imagenData;
-    linkDescarga.download = `carga_${comprobanteNum}.png`;
-    document.body.appendChild(linkDescarga);
-    linkDescarga.click();
-    document.body.removeChild(linkDescarga);
-
-  } catch (err) {
-    console.error("Error al generar la captura:", err);
-  } finally {
-    if (btnRegistrar) btnRegistrar.style.visibility = "visible";
-    if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "visible";
+      const imagenData = canvas.toDataURL("image/png");
+      const linkDescarga = document.createElement("a");
+      linkDescarga.href = imagenData;
+      linkDescarga.download = `carga_${comprobanteNum}.png`;
+      document.body.appendChild(linkDescarga);
+      linkDescarga.click();
+      document.body.removeChild(linkDescarga);
+    } catch (err) {
+      console.error("Error al generar la captura:", err);
+    }
   }
 
-  // 5. Enviar los datos a Google Sheets
+  if (btnRegistrar) btnRegistrar.style.visibility = "visible";
+  if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "visible";
+
+  // 4. Enviar los datos a Google Sheets (en segundo plano)
   if (typeof SCRIPT_URL !== "undefined" && pendingPayload) {
     fetch(SCRIPT_URL, {
       method: "POST",
@@ -729,20 +732,32 @@ async function procesarYEnviarCarga() {
     }).catch(err => console.error("Error en Sheets:", err));
   }
 
- // 6. Notificación por WhatsApp con CallMeBot
+  // 5. Notificación por WhatsApp con CallMeBot (en segundo plano)
   const PHONE_NUMBER = "5493413855760";
   const API_KEY = "9974488";
 
   if (pendingPayload && pendingPayload.nombre) {
-    const mensajeWA = `${pendingPayload.nombre} completo la cargar de gasoil`;
+    const mensajeWA = `${pendingPayload.nombre} completo la carga de gasoil`;
     const urlWA = `https://api.callmebot.com/whatsapp.php?phone=${PHONE_NUMBER}&text=${encodeURIComponent(mensajeWA)}&apikey=${API_KEY}`;
     
-    // Abrimos una petición directa limpia
-    fetch(urlWA, { mode: "no-cors" })
-      .then(() => console.log("WhatsApp enviado correctamente"))
-      .catch(err => console.error("Error enviando WhatsApp:", err));
+    fetch(urlWA, { mode: "no-cors" }).catch(err => console.error("Error enviando WhatsApp:", err));
   }
+
+  // 6. Cierre del modal y pantalla de éxito (GARANTIZADO)
+  if (typeof incrementReceiptNumber === "function") incrementReceiptNumber();
+  if (typeof closeConfirm === "function") closeConfirm();
+  
+  const successMsg = document.getElementById("successMessage");
+  if (successMsg) successMsg.style.display = "flex";
+  if (typeof startFireworks === "function") startFireworks();
+
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = "CONFIRMAR Y ENVIAR";
+  }
+  pendingPayload = null;
 }
+}s
 
 /* =====================================================
    CERRAR MENSAJE
