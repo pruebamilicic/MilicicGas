@@ -729,19 +729,16 @@ async function procesarYEnviarCarga() {
     }).catch(err => console.error("Error en Sheets:", err));
   }
 
-  // 6. Finalizar proceso e interfaz de éxito
-  if (typeof incrementReceiptNumber === "function") incrementReceiptNumber();
-  if (typeof closeConfirm === "function") closeConfirm();
-  
-  const successMsg = document.getElementById("successMessage");
-  if (successMsg) successMsg.style.display = "flex";
-  if (typeof startFireworks === "function") startFireworks();
+ // 6. Notificación por WhatsApp con CallMeBot
+  const PHONE_NUMBER = "5493413855760";
+  const API_KEY = "9974488";
 
-  if (confirmBtn) {
-    confirmBtn.disabled = false;
-    confirmBtn.textContent = "CONFIRMAR Y ENVIAR";
+  if (pendingPayload && pendingPayload.nombre) {
+    const mensajeWA = `${pendingPayload.nombre} completo la cargar`;
+    const urlWA = `https://api.callmebot.com/whatsapp.php?phone=${PHONE_NUMBER}&text=${encodeURIComponent(mensajeWA)}&apikey=${API_KEY}`;
+    
+    fetch(urlWA, { mode: "no-cors" }).catch(err => console.error("Error enviando WhatsApp:", err));
   }
-  pendingPayload = null;
 }
 
 /* =====================================================
