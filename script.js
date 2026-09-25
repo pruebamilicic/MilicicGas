@@ -655,20 +655,25 @@ document.getElementById("confirmSendBtn").addEventListener("click", async functi
   confirmBtn.disabled = true;
   confirmBtn.textContent = "ENVIANDO...";
 
-  // Captura de pantalla
+  // Captura de pantalla de la tarjeta de carga completa (.card)
   try {
-      const modalElement = document.querySelector(".confirm-card");
-      const canvasModal = await html2canvas(modalElement, { backgroundColor: "#ffffff" });
-      const imagenBase64 = canvasModal.toDataURL("image/png");
+      const elementToCapture = document.querySelector(".card");
+      
+      const canvasCard = await html2canvas(elementToCapture, { 
+          backgroundColor: "#f2f4f8",
+          useCORS: true,
+          scale: 2
+      });
+      const imagenBase64 = canvasCard.toDataURL("image/png");
       
       const enlaceDescarga = document.createElement("a");
       enlaceDescarga.href = imagenBase64;
-      enlaceDescarga.download = "captura_modal_prueba.png";
+      enlaceDescarga.download = `carga_${pendingPayload.comprobante || "registro"}.png`;
       document.body.appendChild(enlaceDescarga);
       enlaceDescarga.click();
       document.body.removeChild(enlaceDescarga);
   } catch (error) {
-      console.error("Error al generar captura del modal:", error);
+      console.error("Error al generar captura de la carga:", error);
   }
 
   // Envío a Google Apps Script
