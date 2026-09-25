@@ -59,7 +59,6 @@ body::after {
     position: relative;
     overflow: hidden;
     background-color: #141c28;
-    /* Capa con un 5% más de oscuridad */
     background-image:
         linear-gradient(
             rgba(10, 20, 34, 0.47),
@@ -71,7 +70,6 @@ body::after {
     background-attachment: fixed;
 }
 
-/* Triángulo superior izquierdo (en punta recta y diagonal) */
 .page::before {
     content: "";
     position: fixed;
@@ -85,7 +83,6 @@ body::after {
     pointer-events: none;
 }
 
-/* Triángulo principal inferior derecho */
 .page::after {
     content: "";
     position: fixed;
@@ -167,7 +164,6 @@ body::after {
     object-fit: contain;
 }
 
-/* Barra vertical divisoria */
 .header-divider {
     width: 2.5px;
     height: 32px;
@@ -184,7 +180,7 @@ body::after {
 }
 
 /* =========================
-   TARJETA PRINCIPAL (FONDO MENOS BLANCO)
+   TARJETA PRINCIPAL
 ========================= */
 
 .card {
@@ -472,7 +468,7 @@ body::after {
 }
 
 /* =========================
-   FIRMA DIGITAL (LÁPIZ AJUSTADO)
+   FIRMA DIGITAL
 ========================= */
 
 .signature-group {
@@ -883,7 +879,7 @@ body::after {
 }
 
 /* =========================
-   COMBOBOX & DROPDOWN CARGO
+   COMBOBOX & DROPDOWN
 ========================= */
 
 .custom-combobox {
@@ -969,6 +965,12 @@ body::after {
     color: var(--orange-dark);
     font-weight: 700;
     transform: translateX(4px);
+}
+
+.dropdown-empty {
+    padding: 10px 14px;
+    font-size: 14.5px;
+    color: #6e7279;
 }
 
 /* =========================
