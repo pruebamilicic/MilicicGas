@@ -10,11 +10,12 @@ function updateDateTime() {
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const seconds = String(now.getSeconds()).padStart(2, '0');
 
-  document.getElementById("currentDate").textContent = `${day}/${month}/${year}`;
-  document.getElementById("currentTime").textContent = `${hours}:${minutes}:${seconds}`;
+  const dateElem = document.getElementById("currentDate");
+  const timeElem = document.getElementById("currentTime");
+
+  if (dateElem) dateElem.textContent = `${day}/${month}/${year}`;
+  if (timeElem) timeElem.textContent = `${hours}:${minutes}:${seconds}`;
 }
-updateDateTime();
-setInterval(updateDateTime, 1000);
 
 /* =====================================================
    NÚMERO DE COMPROBANTE
@@ -25,7 +26,8 @@ function loadReceiptNumber() {
     lastNumber = 36895;
     localStorage.setItem("milicicReceiptNumber", lastNumber);
   }
-  document.getElementById("receiptNumber").textContent = lastNumber;
+  const receiptElem = document.getElementById("receiptNumber");
+  if (receiptElem) receiptElem.textContent = lastNumber;
 }
 
 function incrementReceiptNumber() {
@@ -36,83 +38,90 @@ function incrementReceiptNumber() {
     lastNumber = Number(lastNumber) + 1;
   }
   localStorage.setItem("milicicReceiptNumber", lastNumber);
-  document.getElementById("receiptNumber").textContent = lastNumber;
+  const receiptElem = document.getElementById("receiptNumber");
+  if (receiptElem) receiptElem.textContent = lastNumber;
 }
-loadReceiptNumber();
 
 /* =====================================================
    FIRMA DIGITAL
 ===================================================== */
-const canvas = document.getElementById("signatureCanvas");
-const ctx = canvas.getContext("2d");
-const placeholder = document.getElementById("signaturePlaceholder");
+let canvas, ctx, placeholder;
 let drawing = false;
 let hasSignature = false;
 
-function resizeCanvas() {
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
-  ctx.lineWidth = 2.5;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = "#333";
-}
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
+function initSignature() {
+  canvas = document.getElementById("signatureCanvas");
+  if (!canvas) return;
+  ctx = canvas.getContext("2d");
+  placeholder = document.getElementById("signaturePlaceholder");
 
-function getPosition(event) {
-  const rect = canvas.getBoundingClientRect();
-  let clientX, clientY;
-  if (event.touches) {
-    clientX = event.touches[0].clientX;
-    clientY = event.touches[0].clientY;
-  } else {
-    clientX = event.clientX;
-    clientY = event.clientY;
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#333";
   }
-  return { x: clientX - rect.left, y: clientY - rect.top };
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
+
+  function getPosition(event) {
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    if (event.touches) {
+      clientX = event.touches[0].clientX;
+      clientY = event.touches[0].clientY;
+    } else {
+      clientX = event.clientX;
+      clientY = event.clientY;
+    }
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
+  function startDrawing(event) {
+    event.preventDefault();
+    drawing = true;
+    hasSignature = true;
+    if (placeholder) placeholder.style.display = "none";
+    const pos = getPosition(event);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  }
+
+  function draw(event) {
+    if (!drawing) return;
+    event.preventDefault();
+    const pos = getPosition(event);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+  }
+
+  function stopDrawing() {
+    drawing = false;
+    ctx.closePath();
+  }
+
+  canvas.addEventListener("mousedown", startDrawing);
+  canvas.addEventListener("mousemove", draw);
+  canvas.addEventListener("mouseup", stopDrawing);
+  canvas.addEventListener("mouseleave", stopDrawing);
+  canvas.addEventListener("touchstart", startDrawing, { passive: false });
+  canvas.addEventListener("touchmove", draw, { passive: false });
+  canvas.addEventListener("touchend", stopDrawing);
+
+  document.getElementById("clearSignature")?.addEventListener("click", function() {
+    if (ctx && canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasSignature = false;
+      if (placeholder) placeholder.style.display = "block";
+    }
+  });
 }
-
-function startDrawing(event) {
-  event.preventDefault();
-  drawing = true;
-  hasSignature = true;
-  placeholder.style.display = "none";
-  const pos = getPosition(event);
-  ctx.beginPath();
-  ctx.moveTo(pos.x, pos.y);
-}
-
-function draw(event) {
-  if (!drawing) return;
-  event.preventDefault();
-  const pos = getPosition(event);
-  ctx.lineTo(pos.x, pos.y);
-  ctx.stroke();
-}
-
-function stopDrawing() {
-  drawing = false;
-  ctx.closePath();
-}
-
-canvas.addEventListener("mousedown", startDrawing);
-canvas.addEventListener("mousemove", draw);
-canvas.addEventListener("mouseup", stopDrawing);
-canvas.addEventListener("mouseleave", stopDrawing);
-canvas.addEventListener("touchstart", startDrawing, { passive: false });
-canvas.addEventListener("touchmove", draw, { passive: false });
-canvas.addEventListener("touchend", stopDrawing);
-
-document.getElementById("clearSignature").addEventListener("click", function() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  hasSignature = false;
-  placeholder.style.display = "block";
-});
 
 function getOptimizedSignature() {
-  if (!hasSignature) return "";
+  if (!hasSignature || !canvas) return "";
   const tempCanvas = document.createElement("canvas");
   const maxW = 380;
   const scale = Math.min(1, maxW / canvas.width);
@@ -124,132 +133,23 @@ function getOptimizedSignature() {
 }
 
 /* =====================================================
-   RESTRICCIONES EN TIEMPO REAL
-===================================================== */
-const vehicleInput = document.getElementById("vehicle");
-vehicleInput.addEventListener("input", function() {
-  const hasAlpha = /[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(this.value);
-  if (!hasAlpha && this.value.length > 5) {
-    this.value = this.value.slice(0, 5);
-  }
-});
-
-const kmInput = document.getElementById("kilometers");
-kmInput.addEventListener("keydown", function(e) {
-  if (e.key === "-" || e.key === "e") {
-    e.preventDefault();
-  }
-});
-kmInput.addEventListener("input", function() {
-  if (this.value !== "" && Number(this.value) < 0) {
-    this.value = 0;
-  }
-});
-
-/* =====================================================
    DESPLEGABLE PERSONALIZADO - CENTRO DE COSTO
 ===================================================== */
 const costCenterList = [
-    "01 - General Rosario",
-    "04 - Legales Rosario",
-    "05 - Serv técnico Rosario",
-    "06 - Departamento Técnico",
-    "06 - Gerencia Operaciones",
-    "07 - Comercial Rosario",
-    "08 - Abast Rosario",
-    "09 - Obras Varias Milicic",
-    "10 - Logística Rosario",
-    "11 - Gerencia Rosario",
-    "13 - SSGG Rosario",
-    "14 - Sistemas Rosario",
-    "15 - RRHH Rosario",
-    "16 - SIG Rosario",
-    "17 - Agasa",
-    "18 - Gerencia Eqp Ros",
-    "19 - Gerencia HU",
-    "20 - Comercial Rental Ros",
-    "22 - Campamento",
-    "25 - Devol",
-    "26 - Cantera Soldini",
-    "27 - Sede ex-acindar",
-    "28 - Gerencia Perú",
-    "40 - Compras EQP Rosario",
-    "41 - Com y Sust Rosario",
-    "42 - Admin Rosario",
-    "45 - Desarrollo Rosario",
-
-    "29004 - Nuevo edicifio administrativo",
-    "29007 - Gomeria y deposito cubiertas",
-    "29802 - General Añelo",
-    "29805 - Serv técnico Añelo",
-    "29808 - Abast Añelo",
-    "29813 - SSGG Añelo",
-    "29815 - RRHH Añelo",
-    "29816 - SIG Añelo",
-    "29818 - Gerencia Eqp Añelo",
-    "29820 - Comercial Rental Añelo",
-    "29842 - Admin Añelo"
+  "01 - General Rosario", "04 - Legales Rosario", "05 - Serv técnico Rosario",
+  "06 - Departamento Técnico", "06 - Gerencia Operaciones", "07 - Comercial Rosario",
+  "08 - Abast Rosario", "09 - Obras Varias Milicic", "10 - Logística Rosario",
+  "11 - Gerencia Rosario", "13 - SSGG Rosario", "14 - Sistemas Rosario",
+  "15 - RRHH Rosario", "16 - SIG Rosario", "17 - Agasa", "18 - Gerencia Eqp Ros",
+  "19 - Gerencia HU", "20 - Comercial Rental Ros", "22 - Campamento", "25 - Devol",
+  "26 - Cantera Soldini", "27 - Sede ex-acindar", "28 - Gerencia Perú",
+  "40 - Compras EQP Rosario", "41 - Com y Sust Rosario", "42 - Admin Rosario",
+  "45 - Desarrollo Rosario", "29004 - Nuevo edicifio administrativo",
+  "29007 - Gomeria y deposito cubiertas", "29802 - General Añelo",
+  "29805 - Serv técnico Añelo", "29808 - Abast Añelo", "29813 - SSGG Añelo",
+  "29815 - RRHH Añelo", "29816 - SIG Añelo", "29818 - Gerencia Eqp Añelo",
+  "29820 - Comercial Rental Añelo", "29842 - Admin Añelo"
 ];
-
-const costCenterInput = document.getElementById("costCenter");
-const costCenterDropdown = document.getElementById("costCenterDropdown");
-const costCenterWrapper = document.getElementById("costCenterWrapper");
-const toggleCostCenterBtn = document.getElementById("toggleCostCenterList");
-
-function populateCostCenterDropdown(filter = "") {
-  costCenterDropdown.innerHTML = "";
-  const filterLower = filter.toLowerCase().trim();
-  const filtered = costCenterList.filter(name =>
-    name.toLowerCase().includes(filterLower)
-  );
-
-  if (filtered.length === 0) {
-    const emptyLi = document.createElement("li");
-    emptyLi.className = "dropdown-empty";
-    emptyLi.textContent = "Sin coincidencias (se guardará lo escrito)";
-    costCenterDropdown.appendChild(emptyLi);
-  } else {
-    filtered.forEach(name => {
-      const li = document.createElement("li");
-      li.className = "dropdown-item";
-      li.textContent = name;
-      li.addEventListener("mousedown", function(e) {
-        e.preventDefault();
-        costCenterInput.value = name;
-        closeCostCenterDropdown();
-      });
-      costCenterDropdown.appendChild(li);
-    });
-  }
-}
-populateCostCenterDropdown();
-
-function openCostCenterDropdown() {
-  costCenterWrapper.classList.add("open");
-  costCenterDropdown.classList.add("show");
-  populateCostCenterDropdown(costCenterInput.value);
-}
-
-function closeCostCenterDropdown() {
-  costCenterWrapper.classList.remove("open");
-  costCenterDropdown.classList.remove("show");
-}
-
-costCenterInput.addEventListener("focus", openCostCenterDropdown);
-costCenterInput.addEventListener("input", function() {
-  openCostCenterDropdown();
-  populateCostCenterDropdown(this.value);
-});
-
-toggleCostCenterBtn.addEventListener("click", function(e) {
-  e.stopPropagation();
-  if (costCenterDropdown.classList.contains("show")) {
-    closeCostCenterDropdown();
-  } else {
-    costCenterInput.focus();
-    openCostCenterDropdown();
-  }
-});
 
 /* =====================================================
    DESPLEGABLE PERSONALIZADO - CARGO
@@ -262,85 +162,78 @@ const cargoList = [
   "LNASUTI", "MPANIAGUA", "PANIAGUA M", "RENTAL", "ROBLEDO", "TECNICO", "TOMAS"
 ];
 
-const positionInput = document.getElementById("position");
-const cargoDropdown = document.getElementById("cargoDropdown");
-const cargoWrapper = document.getElementById("cargoWrapper");
-const toggleBtn = document.getElementById("toggleCargoList");
+function setupDropdown(inputId, dropdownId, wrapperId, toggleBtnId, dataList) {
+  const input = document.getElementById(inputId);
+  const dropdown = document.getElementById(dropdownId);
+  const wrapper = document.getElementById(wrapperId);
+  const toggleBtn = document.getElementById(toggleBtnId);
 
-function populateCargoDropdown(filter = "") {
-  cargoDropdown.innerHTML = "";
-  const filterLower = filter.toLowerCase().trim();
-  const filtered = cargoList.filter(name =>
-    name.toLowerCase().includes(filterLower)
-  );
+  if (!input || !dropdown || !wrapper) return;
 
-  if (filtered.length === 0) {
-    const emptyLi = document.createElement("li");
-    emptyLi.className = "dropdown-empty";
-    emptyLi.textContent = "Sin coincidencias (se guardará lo escrito)";
-    cargoDropdown.appendChild(emptyLi);
-  } else {
-    filtered.forEach(name => {
-      const li = document.createElement("li");
-      li.className = "dropdown-item";
-      li.textContent = name;
-      li.addEventListener("mousedown", function(e) {
-        e.preventDefault();
-        positionInput.value = name;
-        closeCargoDropdown();
+  function populate(filter = "") {
+    dropdown.innerHTML = "";
+    const filterLower = filter.toLowerCase().trim();
+    const filtered = dataList.filter(name => name.toLowerCase().includes(filterLower));
+
+    if (filtered.length === 0) {
+      const emptyLi = document.createElement("li");
+      emptyLi.className = "dropdown-empty";
+      emptyLi.textContent = "Sin coincidencias (se guardará lo escrito)";
+      dropdown.appendChild(emptyLi);
+    } else {
+      filtered.forEach(name => {
+        const li = document.createElement("li");
+        li.className = "dropdown-item";
+        li.textContent = name;
+        li.addEventListener("mousedown", function(e) {
+          e.preventDefault();
+          input.value = name;
+          close();
+        });
+        dropdown.appendChild(li);
       });
-      cargoDropdown.appendChild(li);
+    }
+  }
+
+  function open() {
+    wrapper.classList.add("open");
+    dropdown.classList.add("show");
+    populate(input.value);
+  }
+
+  function close() {
+    wrapper.classList.remove("open");
+    dropdown.classList.remove("show");
+  }
+
+  input.addEventListener("focus", open);
+  input.addEventListener("input", function() {
+    open();
+    populate(this.value);
+  });
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      dropdown.classList.contains("show") ? close() : (input.focus(), open());
     });
   }
+
+  document.addEventListener("click", function(e) {
+    if (!wrapper.contains(e.target)) close();
+  });
 }
-populateCargoDropdown();
-
-function openCargoDropdown() {
-  cargoWrapper.classList.add("open");
-  cargoDropdown.classList.add("show");
-  populateCargoDropdown(positionInput.value);
-}
-
-function closeCargoDropdown() {
-  cargoWrapper.classList.remove("open");
-  cargoDropdown.classList.remove("show");
-}
-
-positionInput.addEventListener("focus", openCargoDropdown);
-positionInput.addEventListener("input", function() {
-  openCargoDropdown();
-  populateCargoDropdown(this.value);
-});
-
-toggleBtn.addEventListener("click", function(e) {
-  e.stopPropagation();
-  if (cargoDropdown.classList.contains("show")) {
-    closeCargoDropdown();
-  } else {
-    positionInput.focus();
-    openCargoDropdown();
-  }
-});
-
-document.addEventListener("click", function(e) {
-  if (costCenterWrapper && !costCenterWrapper.contains(e.target)) {
-    closeCostCenterDropdown();
-  }
-  if (cargoWrapper && !cargoWrapper.contains(e.target)) {
-    closeCargoDropdown();
-  }
-});
 
 /* =====================================================
-   VALIDACIÓN
+   VALIDACIÓN DE FORMULARIO
 ===================================================== */
 function validateForm() {
-  const vehicle = document.getElementById("vehicle").value.trim();
-  const costCenter = document.getElementById("costCenter").value.trim();
-  const kilometers = document.getElementById("kilometers").value.trim();
-  const liters = document.getElementById("liters").value.trim();
-  const name = document.getElementById("name").value.trim();
-  const position = document.getElementById("position").value.trim();
+  const vehicle = document.getElementById("vehicle")?.value.trim();
+  const costCenter = document.getElementById("costCenter")?.value.trim();
+  const kilometers = document.getElementById("kilometers")?.value.trim();
+  const liters = document.getElementById("liters")?.value.trim();
+  const name = document.getElementById("name")?.value.trim();
+  const position = document.getElementById("position")?.value.trim();
 
   if (!vehicle) {
     alert("Por favor, ingresá el N° interno del vehículo.");
@@ -385,11 +278,6 @@ function validateForm() {
   }
   return true;
 }
-
-/* =====================================================
-   URL DE GOOGLE APPS SCRIPT
-===================================================== */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzxPOD1uBWv9ucQhH_exv1vQTZWkVjekWJ7J-y3KUjKNjMGtN3EEaArTh2InOeqCVdT/exec";
 
 /* =====================================================
    FUEGOS ARTIFICIALES
@@ -453,14 +341,11 @@ function createFireworkRocket(fromCorner) {
   const speed = dist / 28;
 
   fireworkRockets.push({
-    x: startX,
-    y: startY,
+    x: startX, y: startY,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
-    targetX: targetX,
-    targetY: targetY,
-    color: color,
-    trail: []
+    targetX: targetX, targetY: targetY,
+    color: color, trail: []
   });
 }
 
@@ -470,16 +355,14 @@ function explodeRocket(x, y, color) {
     const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.2;
     const speed = Math.random() * 6 + 2;
     fireworkSparks.push({
-      x: x,
-      y: y,
+      x: x, y: y,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       color: Math.random() > 0.3 ? color : FW_COLORS[Math.floor(Math.random() * FW_COLORS.length)],
       radius: Math.random() * 2.5 + 1.5,
       alpha: 1,
       decay: Math.random() * 0.018 + 0.015,
-      gravity: 0.12,
-      friction: 0.97
+      gravity: 0.12, friction: 0.97
     });
   }
 }
@@ -499,16 +382,13 @@ function shootCornerConfetti() {
       const rad = ((c.angleMin + Math.random() * (c.angleMax - c.angleMin)) * Math.PI) / 180;
       const speed = Math.random() * 12 + 8;
       fireworkSparks.push({
-        x: c.x,
-        y: c.y,
-        vx: Math.cos(rad) * speed,
-        vy: Math.sin(rad) * speed,
+        x: c.x, y: c.y,
+        vx: Math.cos(rad) * speed, vy: Math.sin(rad) * speed,
         color: FW_COLORS[Math.floor(Math.random() * FW_COLORS.length)],
         radius: Math.random() * 3 + 2,
         alpha: 1,
         decay: Math.random() * 0.015 + 0.012,
-        gravity: 0.18,
-        friction: 0.96
+        gravity: 0.18, friction: 0.96
       });
     }
   });
@@ -609,35 +489,15 @@ function stopFireworks() {
 }
 
 /* =====================================================
-   ENVIAR FORMULARIO
+   ENVÍO Y CONFIGURACIÓN DE RED
 ===================================================== */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzxPOD1uBWv9ucQhH_exv1vQTZWkVjekWJ7J-y3KUjKNjMGtN3EEaArTh2InOeqCVdT/exec";
 let pendingPayload = null;
 
-document.getElementById("fuelForm").addEventListener("submit", function(event) {
-  event.preventDefault();
-  if (!validateForm()) return;
-
-  pendingPayload = {
-    fecha: document.getElementById("currentDate").textContent,
-    hora: document.getElementById("currentTime").textContent,
-    comprobante: document.getElementById("receiptNumber").textContent,
-    vehiculo: document.getElementById("vehicle").value.trim(),
-    centroCosto: document.getElementById("costCenter").value.trim(),
-    kilometros: document.getElementById("kilometers").value.trim(),
-    litros: document.getElementById("liters").value.trim(),
-    nombre: document.getElementById("name").value.trim(),
-    cargo: document.getElementById("position").value.trim(),
-    firma: getOptimizedSignature()
-  };
-
-  showConfirm(pendingPayload);
-});
-
-/* =====================================================
-   MODAL DE CONFIRMACIÓN
-===================================================== */
 function showConfirm(payload) {
   const list = document.getElementById("confirmList");
+  if (!list) return;
+
   const rows = [
     ["N° comprobante", payload.comprobante],
     ["Vehículo", payload.vehiculo],
@@ -649,31 +509,20 @@ function showConfirm(payload) {
   ];
 
   list.innerHTML = rows.map(([label, value]) =>
-    '<div class="confirm-row">' +
-      '<span class="confirm-label">' + label + '</span>' +
-      '<span class="confirm-value">' + value + '</span>' +
-    '</div>'
+    `<div class="confirm-row"><span class="confirm-label">${label}</span><span class="confirm-value">${value}</span></div>`
   ).join("");
 
-  list.innerHTML +=
-    '<div class="confirm-row confirm-row-signature">' +
-      '<span class="confirm-label">Firma</span>' +
-      '<img src="' + payload.firma + '" alt="Firma del responsable" class="confirm-signature-img">' +
-    '</div>';
+  list.innerHTML += `<div class="confirm-row confirm-row-signature"><span class="confirm-label">Firma</span><img src="${payload.firma}" alt="Firma" class="confirm-signature-img"></div>`;
 
-  document.getElementById("confirmMessage").style.display = "flex";
+  const modal = document.getElementById("confirmMessage");
+  if (modal) modal.style.display = "flex";
 }
 
 function closeConfirm() {
-  document.getElementById("confirmMessage").style.display = "none";
+  const modal = document.getElementById("confirmMessage");
+  if (modal) modal.style.display = "none";
 }
 
-/* =====================================================
-   CAPTURA COMPLETA DEL FORMULARIO Y ENVÍO A SHEETS
-===================================================== */
-/* =====================================================
-   CAPTURA COMPLETA DEL FORMULARIO Y ENVÍO A SHEETS + WHATSAPP
-===================================================== */
 async function procesarYEnviarCarga() {
   const confirmBtn = document.getElementById("confirmSendBtn");
   if (confirmBtn) {
@@ -681,75 +530,61 @@ async function procesarYEnviarCarga() {
     confirmBtn.textContent = "ENVIANDO...";
   }
 
-  // 1. Obtener el número de comprobante actual
   const comprobanteElem = document.getElementById("receiptNumber");
-  const comprobanteNum = comprobanteElem 
-    ? (comprobanteElem.textContent || comprobanteElem.value) 
-    : (pendingPayload ? pendingPayload.comprobante : "36920");
+  const comprobanteNum = comprobanteElem ? comprobanteElem.textContent : "36895";
 
-  // 2. Ocultar temporalmente los botones para la captura
+  // 1. Ocultar botones para la imagen
   const btnRegistrar = document.querySelector(".btn-submit") || confirmBtn;
   const btnLimpiarFirma = document.getElementById("clearSignature");
-  
   if (btnRegistrar) btnRegistrar.style.visibility = "hidden";
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "hidden";
 
-  // 3. Captura de pantalla (si html2canvas no está cargado en el HTML, no frena el flujo)
+  // 2. Captura de pantalla
   if (typeof html2canvas !== "undefined") {
     try {
       const formElement = document.querySelector(".form-container") || document.querySelector("form") || document.body;
-      
-      const canvas = await html2canvas(formElement, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-        scrollY: -window.scrollY
-      });
-
-      const imagenData = canvas.toDataURL("image/png");
-      const linkDescarga = document.createElement("a");
-      linkDescarga.href = imagenData;
-      linkDescarga.download = `carga_${comprobanteNum}.png`;
-      document.body.appendChild(linkDescarga);
-      linkDescarga.click();
-      document.body.removeChild(linkDescarga);
-    } catch (err) {
-      console.error("Error al generar la captura:", err);
+      const canvasCap = await html2canvas(formElement, { backgroundColor: "#ffffff", scale: 2, useCORS: true });
+      const link = document.createElement("a");
+      link.href = canvasCap.toDataURL("image/png");
+      link.download = `carga_${comprobanteNum}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error("Error en captura:", e);
     }
   }
 
   if (btnRegistrar) btnRegistrar.style.visibility = "visible";
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "visible";
 
-  // 4. Enviar los datos a Google Sheets (en segundo plano)
-  if (typeof SCRIPT_URL !== "undefined" && pendingPayload) {
+  // 3. Enviar a Google Sheets
+  if (SCRIPT_URL && pendingPayload) {
     fetch(SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
-      keepalive: true,
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(pendingPayload)
-    }).catch(err => console.error("Error en Sheets:", err));
+    }).catch(err => console.error("Error Sheets:", err));
   }
 
-  // 5. Notificación por WhatsApp con CallMeBot (en segundo plano)
+  // 4. WhatsApp con CallMeBot
   const PHONE_NUMBER = "5493413855760";
   const API_KEY = "9974488";
 
   if (pendingPayload && pendingPayload.nombre) {
     const mensajeWA = `${pendingPayload.nombre} completo la carga de gasoil`;
     const urlWA = `https://api.callmebot.com/whatsapp.php?phone=${PHONE_NUMBER}&text=${encodeURIComponent(mensajeWA)}&apikey=${API_KEY}`;
-    
-    fetch(urlWA, { mode: "no-cors" }).catch(err => console.error("Error enviando WhatsApp:", err));
+    fetch(urlWA, { mode: "no-cors" }).catch(err => console.error("Error WhatsApp:", err));
   }
 
-  // 6. Cierre del modal y pantalla de éxito (GARANTIZADO)
-  if (typeof incrementReceiptNumber === "function") incrementReceiptNumber();
-  if (typeof closeConfirm === "function") closeConfirm();
-  
+  // 5. Finalización
+  incrementReceiptNumber();
+  closeConfirm();
+
   const successMsg = document.getElementById("successMessage");
   if (successMsg) successMsg.style.display = "flex";
-  if (typeof startFireworks === "function") startFireworks();
+  startFireworks();
 
   if (confirmBtn) {
     confirmBtn.disabled = false;
@@ -757,23 +592,75 @@ async function procesarYEnviarCarga() {
   }
   pendingPayload = null;
 }
-}s
 
-/* =====================================================
-   CERRAR MENSAJE
-===================================================== */
 function closeSuccess() {
   stopFireworks();
-  document.getElementById("successMessage").style.display = "none";
-  document.getElementById("fuelForm").reset();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  hasSignature = false;
-  placeholder.style.display = "block";
+  const successMsg = document.getElementById("successMessage");
+  if (successMsg) successMsg.style.display = "none";
+  document.getElementById("fuelForm")?.reset();
+  if (ctx && canvas) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasSignature = false;
+    if (placeholder) placeholder.style.display = "block";
+  }
 }
 
 /* =====================================================
-   EVENT LISTENERS DE BOTONES Y MODALES
+   INICIALIZACIÓN SEGURO (DOM LOADED)
 ===================================================== */
-document.getElementById("confirmSendBtn")?.addEventListener("click", procesarYEnviarCarga);
-document.getElementById("cancelConfirmBtn")?.addEventListener("click", closeConfirm);
-document.getElementById("closeSuccessBtn")?.addEventListener("click", closeSuccess);
+document.addEventListener("DOMContentLoaded", function () {
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+  loadReceiptNumber();
+  initSignature();
+
+  setupDropdown("costCenter", "costCenterDropdown", "costCenterWrapper", "toggleCostCenterList", costCenterList);
+  setupDropdown("position", "cargoDropdown", "cargoWrapper", "toggleCargoList", cargoList);
+
+  // Restricciones de entrada
+  const vehicleInput = document.getElementById("vehicle");
+  if (vehicleInput) {
+    vehicleInput.addEventListener("input", function() {
+      const hasAlpha = /[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(this.value);
+      if (!hasAlpha && this.value.length > 5) {
+        this.value = this.value.slice(0, 5);
+      }
+    });
+  }
+
+  const kmInput = document.getElementById("kilometers");
+  if (kmInput) {
+    kmInput.addEventListener("keydown", function(e) {
+      if (e.key === "-" || e.key === "e") e.preventDefault();
+    });
+    kmInput.addEventListener("input", function() {
+      if (this.value !== "" && Number(this.value) < 0) this.value = 0;
+    });
+  }
+
+  // Envío de Formulario
+  document.getElementById("fuelForm")?.addEventListener("submit", function(event) {
+    event.preventDefault();
+    if (!validateForm()) return;
+
+    pendingPayload = {
+      fecha: document.getElementById("currentDate")?.textContent || "",
+      hora: document.getElementById("currentTime")?.textContent || "",
+      comprobante: document.getElementById("receiptNumber")?.textContent || "",
+      vehiculo: document.getElementById("vehicle").value.trim(),
+      centroCosto: document.getElementById("costCenter").value.trim(),
+      kilometros: document.getElementById("kilometers").value.trim(),
+      litros: document.getElementById("liters").value.trim(),
+      nombre: document.getElementById("name").value.trim(),
+      cargo: document.getElementById("position").value.trim(),
+      firma: getOptimizedSignature()
+    };
+
+    showConfirm(pendingPayload);
+  });
+
+  // Escuchadores de botones de modales
+  document.getElementById("confirmSendBtn")?.addEventListener("click", procesarYEnviarCarga);
+  document.getElementById("cancelConfirmBtn")?.addEventListener("click", closeConfirm);
+  document.getElementById("closeSuccessBtn")?.addEventListener("click", closeSuccess);
+});
