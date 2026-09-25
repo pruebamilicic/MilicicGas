@@ -669,9 +669,9 @@ function closeConfirm() {
 }
 
 /* =====================================================
-   CONFIRMACIÓN Y ENVÍO A GOOGLE SHEETS (ULTRA RÁPIDO)
+   CONFIRMACIÓN Y ENVÍO A GOOGLE SHEETS CON CAPTURA
 ===================================================== */
-document.getElementById("confirmSendBtn").addEventListener("click", function() {
+document.getElementById("confirmSendBtn").addEventListener("click", async function() {
   if (!pendingPayload) return;
 
   if (!navigator.onLine) {
@@ -683,7 +683,26 @@ document.getElementById("confirmSendBtn").addEventListener("click", function() {
   confirmBtn.disabled = true;
   confirmBtn.textContent = "ENVIANDO...";
 
-  // Envío directo sin pausas ni procesamiento de imagen local
+  // 1. Descarga de captura de pantalla rápida del modal
+  try {
+    const modalElement = document.querySelector(".confirm-card");
+    const canvasModal = await html2canvas(modalElement, { 
+      backgroundColor: "#ffffff",
+      scale: 1.5 // Balance ideal entre velocidad y buena calidad
+    });
+    
+    const imagenBase64 = canvasModal.toDataURL("image/png");
+    const enlaceDescarga = document.createElement("a");
+    enlaceDescarga.href = imagenBase64;
+    enlaceDescarga.download = "comprobante_" + pendingPayload.comprobante + ".png";
+    document.body.appendChild(enlaceDescarga);
+    enlaceDescarga.click();
+    document.body.removeChild(enlaceDescarga);
+  } catch (error) {
+    console.error("Error al generar la captura:", error);
+  }
+
+  // 2. Envío a Google Apps Script en segundo plano
   fetch(SCRIPT_URL, {
     method: "POST",
     mode: "no-cors",
@@ -696,7 +715,7 @@ document.getElementById("confirmSendBtn").addEventListener("click", function() {
     console.error("Error al guardar en Google Sheets:", err);
   });
 
-  // Respuesta e interfaz instantáneas
+  // 3. Respuesta e interfaz de éxito
   incrementReceiptNumber();
   closeConfirm();
   document.getElementById("successMessage").style.display = "flex";
