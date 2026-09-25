@@ -669,9 +669,9 @@ function closeConfirm() {
 }
 
 /* =====================================================
-   CONFIRMACIÓN Y ENVÍO A GOOGLE SHEETS
+   CONFIRMACIÓN Y ENVÍO A GOOGLE SHEETS (ULTRA RÁPIDO)
 ===================================================== */
-document.getElementById("confirmSendBtn").addEventListener("click", async function() {
+document.getElementById("confirmSendBtn").addEventListener("click", function() {
   if (!pendingPayload) return;
 
   if (!navigator.onLine) {
@@ -683,55 +683,20 @@ document.getElementById("confirmSendBtn").addEventListener("click", async functi
   confirmBtn.disabled = true;
   confirmBtn.textContent = "ENVIANDO...";
 
-  // Captura de pantalla de la tarjeta de carga completa (.card)
-  try {
-      const elementToCapture = document.querySelector(".card");
-      const canvasCard = await html2canvas(elementToCapture, { 
-          backgroundColor: "#f2f4f8",
-          useCORS: true,
-          scale: 2
-      });
-      const imagenBase64 = canvasCard.toDataURL("image/png");
-      
-      const enlaceDescarga = document.createElement("a");
-      enlaceDescarga.href = imagenBase64;
-      enlaceDescarga.download = `carga_${pendingPayload.comprobante || "registro"}.png`;
-      document.body.appendChild(enlaceDescarga);
-      enlaceDescarga.click();
-      document.body.removeChild(enlaceDescarga);
-  } catch (error) {
-      console.error("Error al generar captura de la carga:", error);
-  }
-
-  // Estructura de datos codificada para Google Apps Script
-  const formData = new URLSearchParams();
-  formData.append("fecha", pendingPayload.fecha);
-  formData.append("hora", pendingPayload.hora);
-  formData.append("comprobante", pendingPayload.comprobante);
-  formData.append("vehiculo", pendingPayload.vehiculo);
-  formData.append("centroCosto", pendingPayload.centroCosto);
-  formData.append("kilometros", pendingPayload.kilometros);
-  formData.append("litros", pendingPayload.litros);
-  formData.append("nombre", pendingPayload.nombre);
-  formData.append("cargo", pendingPayload.cargo);
-  formData.append("firma", pendingPayload.firma);
-
-  // Envío a Google Apps Script
-  try {
-    await fetch(SCRIPT_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: formData.toString()
-    });
-  } catch (err) {
+  // Envío directo sin pausas ni procesamiento de imagen local
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    keepalive: true,
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify(pendingPayload)
+  }).catch(err => {
     console.error("Error al guardar en Google Sheets:", err);
-  }
+  });
 
-  await new Promise(resolve => setTimeout(resolve, 500));
-
+  // Respuesta e interfaz instantáneas
   incrementReceiptNumber();
   closeConfirm();
   document.getElementById("successMessage").style.display = "flex";
@@ -741,7 +706,6 @@ document.getElementById("confirmSendBtn").addEventListener("click", async functi
   confirmBtn.textContent = "CONFIRMAR Y ENVIAR";
   pendingPayload = null;
 });
-
 /* =====================================================
    CERRAR MENSAJE
 ===================================================== */
