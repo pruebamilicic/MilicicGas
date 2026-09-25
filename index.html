@@ -26,7 +26,6 @@
                     <img src="imagenes/gasoil.png" alt="Gasoil" class="gas-pump" style="background: transparent; display: block; border: 0; padding: 0;">
                 </div>
 
-                <!-- BARRITA VERTICAL NARANJA -->
                 <div class="header-divider"></div>
 
                 <div class="header-right-text">
@@ -34,7 +33,6 @@
                 </div>
             </div>
         </header>
-
 
         <!-- TARJETA PRINCIPAL -->
         <main class="card">
@@ -49,7 +47,6 @@
 
             <div class="separator"></div>
 
-
             <!-- FORMULARIO -->
             <form id="fuelForm" class="form-content">
 
@@ -57,7 +54,6 @@
                     <div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><path d="M9 12h6"/><path d="M9 16h6"/></svg></div>
                     <h2>DATOS DE LA CARGA</h2>
                 </div>
-
 
                 <!-- FECHA / HORA / COMPROBANTE -->
                 <div class="top-info">
@@ -86,10 +82,9 @@
                     </div>
                 </div>
 
-
                 <!-- VEHÍCULO -->
                 <div class="form-group vehicle-row">
-                    <label class="form-label">
+                    <label class="form-label" for="vehicle">
                         N° INTERNO DEL VEHÍCULO <span class="required">*</span>
                     </label>
                     <div class="input-wrapper has-icon">
@@ -105,10 +100,9 @@
                     </div>
                 </div>
 
-
                 <!-- CENTRO DE COSTO CON DESPLEGABLE -->
                 <div class="form-group">
-                    <label class="form-label">
+                    <label class="form-label" for="costCenter">
                         CENTRO DE COSTO <span class="required">*</span>
                     </label>
                     <div class="input-wrapper custom-combobox" id="costCenterWrapper">
@@ -120,11 +114,10 @@
                     </div>
                 </div>
 
-
                 <!-- KM + LITROS -->
                 <div class="two-columns">
                     <div class="form-group">
-                        <label class="form-label">
+                        <label class="form-label" for="kilometers">
                             CANTIDAD DE KILÓMETROS / HORAS <span class="required">*</span>
                         </label>
                         <div class="input-wrapper">
@@ -133,7 +126,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">
+                        <label class="form-label" for="liters">
                             LITROS ENTREGADOS <span class="required">*</span>
                         </label>
                         <div class="input-wrapper">
@@ -142,11 +135,10 @@
                     </div>
                 </div>
 
-
                 <!-- NOMBRE + CARGO -->
                 <div class="two-columns">
                     <div class="form-group">
-                        <label class="form-label">
+                        <label class="form-label" for="name">
                             NOMBRE Y APELLIDO <span class="required">*</span>
                         </label>
                         <div class="input-wrapper">
@@ -155,7 +147,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">
+                        <label class="form-label" for="position">
                             CARGO <span class="required">*</span>
                         </label>
                         <div class="input-wrapper custom-combobox" id="cargoWrapper">
@@ -167,7 +159,6 @@
                         </div>
                     </div>
                 </div>
-
 
                 <!-- FIRMA -->
                 <div class="form-group signature-group">
@@ -189,13 +180,11 @@
                     <div style="clear:both"></div>
                 </div>
 
-
                 <!-- BOTÓN SUBMIT -->
                 <button type="submit" class="submit-button">
                     <span class="telegram-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg></span>
                     REGISTRAR CARGA
                 </button>
-
 
                 <!-- SEGURIDAD -->
                 <div class="security-notice">
@@ -207,7 +196,6 @@
 
         </main>
 
-
         <!-- FOOTER -->
         <footer class="footer">
             MILICIC CONSTRUCCIONES Y SERVICIOS
@@ -215,7 +203,6 @@
 
     </div>
 </div>
-
 
 <!-- MENSAJE DE CONFIRMACIÓN -->
 <div id="confirmMessage" class="success-message">
@@ -227,7 +214,7 @@
         <div class="confirm-list" id="confirmList"></div>
 
         <div class="confirm-buttons">
-            <button type="button" class="confirm-edit" onclick="closeConfirm()">
+            <button type="button" class="confirm-edit" id="cancelConfirmBtn">
                 VOLVER A EDITAR
             </button>
             <button type="button" class="confirm-send" id="confirmSendBtn">
@@ -237,14 +224,13 @@
     </div>
 </div>
 
-
 <!-- MENSAJE DE ÉXITO -->
 <div id="successMessage" class="success-message">
     <div class="success-card">
         <div class="success-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
         <h3>¡Carga registrada!</h3>
         <p>Los datos de la carga fueron registrados correctamente.</p>
-        <button class="close-success" onclick="closeSuccess()">
+        <button type="button" class="close-success" id="closeSuccessBtn">
             ACEPTAR
         </button>
     </div>
