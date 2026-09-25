@@ -134,13 +134,6 @@ vehicleInput.addEventListener("input", function() {
   }
 });
 
-const costCenterInput = document.getElementById("costCenter");
-costCenterInput.addEventListener("input", function() {
-  if (this.value.length > 10) {
-    this.value = this.value.slice(0, 10);
-  }
-});
-
 const kmInput = document.getElementById("kilometers");
 kmInput.addEventListener("keydown", function(e) {
   if (e.key === "-" || e.key === "e") {
@@ -150,6 +143,83 @@ kmInput.addEventListener("keydown", function(e) {
 kmInput.addEventListener("input", function() {
   if (this.value !== "" && Number(this.value) < 0) {
     this.value = 0;
+  }
+});
+
+/* =====================================================
+   DESPLEGABLE PERSONALIZADO - CENTRO DE COSTO
+===================================================== */
+const costCenterList = [
+  "Departamento Técnico", "Gerencia Operaciones", "Compras EQP Rosario",
+  "Gerencia Eqp Añelo", "Gerencia Eqp Ros", "Logística Rosario", "SSGG Añelo",
+  "SSGG Rosario", "Serv técnico Añelo", "Serv técnico Rosario",
+  "Comercial Rental Añelo", "Comercial Rental Ros", "Gerencia HU",
+  "Abast Añelo", "Abast Rosario", "Admin Añelo", "Admin Rosario",
+  "Comercial Rosario", "Com y Sust Rosario", "Desarrollo Rosario",
+  "Agasa", "Devol", "Las Parejas", "General Añelo", "General Rosario",
+  "Gerencia Perú", "Gerencia Rosario", "Legales Rosario", "Aero B",
+  "Campamento", "Cantera Soldini", "Obras Varias Milicic", "RRHH Añelo",
+  "RRHH Rosario", "SIG Añelo", "SIG Rosario", "Sistemas Rosario",
+  "Milicic Minería"
+];
+
+const costCenterInput = document.getElementById("costCenter");
+const costCenterDropdown = document.getElementById("costCenterDropdown");
+const costCenterWrapper = document.getElementById("costCenterWrapper");
+const toggleCostCenterBtn = document.getElementById("toggleCostCenterList");
+
+function populateCostCenterDropdown(filter = "") {
+  costCenterDropdown.innerHTML = "";
+  const filterLower = filter.toLowerCase().trim();
+  const filtered = costCenterList.filter(name =>
+    name.toLowerCase().includes(filterLower)
+  );
+
+  if (filtered.length === 0) {
+    const emptyLi = document.createElement("li");
+    emptyLi.className = "dropdown-empty";
+    emptyLi.textContent = "Sin coincidencias (se guardará lo escrito)";
+    costCenterDropdown.appendChild(emptyLi);
+  } else {
+    filtered.forEach(name => {
+      const li = document.createElement("li");
+      li.className = "dropdown-item";
+      li.textContent = name;
+      li.addEventListener("mousedown", function(e) {
+        e.preventDefault();
+        costCenterInput.value = name;
+        closeCostCenterDropdown();
+      });
+      costCenterDropdown.appendChild(li);
+    });
+  }
+}
+populateCostCenterDropdown();
+
+function openCostCenterDropdown() {
+  costCenterWrapper.classList.add("open");
+  costCenterDropdown.classList.add("show");
+  populateCostCenterDropdown(costCenterInput.value);
+}
+
+function closeCostCenterDropdown() {
+  costCenterWrapper.classList.remove("open");
+  costCenterDropdown.classList.remove("show");
+}
+
+costCenterInput.addEventListener("focus", openCostCenterDropdown);
+costCenterInput.addEventListener("input", function() {
+  openCostCenterDropdown();
+  populateCostCenterDropdown(this.value);
+});
+
+toggleCostCenterBtn.addEventListener("click", function(e) {
+  e.stopPropagation();
+  if (costCenterDropdown.classList.contains("show")) {
+    closeCostCenterDropdown();
+  } else {
+    costCenterInput.focus();
+    openCostCenterDropdown();
   }
 });
 
@@ -166,7 +236,7 @@ const cargoList = [
 
 const positionInput = document.getElementById("position");
 const cargoDropdown = document.getElementById("cargoDropdown");
-const comboboxWrapper = document.querySelector(".custom-combobox");
+const cargoWrapper = document.getElementById("cargoWrapper");
 const toggleBtn = document.getElementById("toggleCargoList");
 
 function populateCargoDropdown(filter = "") {
@@ -198,13 +268,13 @@ function populateCargoDropdown(filter = "") {
 populateCargoDropdown();
 
 function openCargoDropdown() {
-  comboboxWrapper.classList.add("open");
+  cargoWrapper.classList.add("open");
   cargoDropdown.classList.add("show");
   populateCargoDropdown(positionInput.value);
 }
 
 function closeCargoDropdown() {
-  comboboxWrapper.classList.remove("open");
+  cargoWrapper.classList.remove("open");
   cargoDropdown.classList.remove("show");
 }
 
@@ -225,7 +295,10 @@ toggleBtn.addEventListener("click", function(e) {
 });
 
 document.addEventListener("click", function(e) {
-  if (!comboboxWrapper.contains(e.target)) {
+  if (costCenterWrapper && !costCenterWrapper.contains(e.target)) {
+    closeCostCenterDropdown();
+  }
+  if (cargoWrapper && !cargoWrapper.contains(e.target)) {
     closeCargoDropdown();
   }
 });
@@ -250,8 +323,8 @@ function validateForm() {
     alert("El N° interno del vehículo no puede superar los 5 caracteres si solo contiene números.");
     return false;
   }
-  if (costCenter.length > 10) {
-    alert("El centro de costo no puede superar los 10 caracteres.");
+  if (!costCenter) {
+    alert("Por favor, ingresá o seleccioná el centro de costo.");
     return false;
   }
   if (!kilometers) {
@@ -582,36 +655,23 @@ document.getElementById("confirmSendBtn").addEventListener("click", async functi
   confirmBtn.disabled = true;
   confirmBtn.textContent = "ENVIANDO...";
 
-  // ==========================================================
-  // CÓDIGO DE DESCARGA: CAPTURA DEL FORMULARIO PRINCIPAL
-  // ==========================================================
+  // Captura de pantalla
   try {
-      const formElement = document.querySelector(".card"); 
-      const canvasForm = await html2canvas(formElement, { 
-          backgroundColor: "#f2f4f8",
-          scale: 2 
-      });
-      const imagenBase64 = canvasForm.toDataURL("image/png");
+      const modalElement = document.querySelector(".confirm-card");
+      const canvasModal = await html2canvas(modalElement, { backgroundColor: "#ffffff" });
+      const imagenBase64 = canvasModal.toDataURL("image/png");
       
       const enlaceDescarga = document.createElement("a");
       enlaceDescarga.href = imagenBase64;
-      
-      // Usa el número de comprobante guardado en pendingPayload
-      enlaceDescarga.download = `Comprobante_${pendingPayload.comprobante}.png`; 
-      
+      enlaceDescarga.download = "captura_modal_prueba.png";
       document.body.appendChild(enlaceDescarga);
       enlaceDescarga.click();
       document.body.removeChild(enlaceDescarga);
-      
-      console.log("Captura del formulario generada y descargada con éxito.");
   } catch (error) {
-      console.error("Error al generar captura del formulario:", error);
+      console.error("Error al generar captura del modal:", error);
   }
-  // ==========================================================
-  // FIN CÓDIGO DE DESCARGA
-  // ==========================================================
 
-  // Envío a Google Apps Script con text/plain para evitar bloqueos CORS
+  // Envío a Google Apps Script
   fetch(SCRIPT_URL, {
     method: "POST",
     mode: "no-cors",
@@ -624,7 +684,6 @@ document.getElementById("confirmSendBtn").addEventListener("click", async functi
     console.error("Error al guardar en Google Sheets:", err);
   });
 
-  // Pausa breve para feedback visual
   await new Promise(resolve => setTimeout(resolve, 500));
 
   incrementReceiptNumber();
