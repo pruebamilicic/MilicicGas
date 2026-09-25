@@ -675,53 +675,47 @@ async function procesarYEnviarCarga() {
   const confirmBtn = document.getElementById("confirmSendBtn");
   if (confirmBtn) {
     confirmBtn.disabled = true;
-    confirmBtn.textContent = "GENERANDO COMPROBANTE...";
+    confirmBtn.textContent = "ENVIANDO...";
   }
 
-  // 1. Obtener el número de comprobante
-  const comprobanteNum = pendingPayload ? pendingPayload.comprobante : "36920";
+  // 1. Obtener el número de comprobante actual
+  const comprobanteNum = document.getElementById("receiptNumber") 
+    ? document.getElementById("receiptNumber").value 
+    : (pendingPayload ? pendingPayload.comprobante : "36920");
 
-  // 2. Ocultar botones temporalmente para la foto
+  // 2. Ocultar temporalmente los botones que no deben salir en la imagen
   const btnRegistrar = document.querySelector(".btn-submit") || confirmBtn;
   const btnLimpiarFirma = document.getElementById("clearSignature");
-  if (btnRegistrar) btnRegistrar.style.opacity = "0";
-  if (btnLimpiarFirma) btnLimpiarFirma.style.opacity = "0";
+  
+  if (btnRegistrar) btnRegistrar.style.visibility = "hidden";
+  if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "hidden";
 
+  // 3. Tomar la captura de todo el formulario (.form-container o la etiqueta <form>)
   try {
-    // 3. Capturar el formulario entero
     const formElement = document.querySelector(".form-container") || document.querySelector("form") || document.body;
     
     const canvas = await html2canvas(formElement, {
       backgroundColor: "#ffffff",
-      scale: 2,
+      scale: 2, // Buena calidad de imagen
       useCORS: true,
-      logging: false
+      scrollY: -window.scrollY // Asegura capturar desde el inicio de la página
     });
 
-    // 4. Generar y forzar la descarga de la imagen
-    const imageURI = canvas.toDataURL("image/png");
-    
-    const link = document.createElement("a");
-    link.download = `carga_${comprobanteNum}.png`;
-    link.href = imageURI;
-    link.target = "_blank";
-    
-    // Disparo forzado de descarga
-    document.body.appendChild(link);
-    if (link.click) {
-      link.click();
-    } else {
-      window.open(imageURI, '_blank');
-    }
-    document.body.removeChild(link);
+    // 4. Descargar la imagen con el nombre exacto "carga_NUMERO.png"
+    const imagenData = canvas.toDataURL("image/png");
+    const linkDescarga = document.createElement("a");
+    linkDescarga.href = imagenData;
+    linkDescarga.download = `carga_${comprobanteNum}.png`; // Ejemplo: carga_36920.png
+    document.body.appendChild(linkDescarga);
+    linkDescarga.click();
+    document.body.removeChild(linkDescarga);
 
   } catch (err) {
-    console.error("Error al capturar comprobante:", err);
-    alert("No se pudo descargar la imagen automáticamente. Verificá los permisos de tu navegador.");
+    console.error("Error al generar la captura:", err);
   } finally {
-    // Restaurar visibilidad de botones
-    if (btnRegistrar) btnRegistrar.style.opacity = "1";
-    if (btnLimpiarFirma) btnLimpiarFirma.style.opacity = "1";
+    // Volver a hacer visibles los botones
+    if (btnRegistrar) btnRegistrar.style.visibility = "visible";
+    if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "visible";
   }
 
   // 5. Enviar los datos a Google Sheets
@@ -735,7 +729,7 @@ async function procesarYEnviarCarga() {
     }).catch(err => console.error("Error en Sheets:", err));
   }
 
-  // 6. Finalizar
+  // 6. Finalizar proceso e interfaz de éxito
   if (typeof incrementReceiptNumber === "function") incrementReceiptNumber();
   if (typeof closeConfirm === "function") closeConfirm();
   
