@@ -658,7 +658,6 @@ document.getElementById("confirmSendBtn").addEventListener("click", async functi
   // Captura de pantalla de la tarjeta de carga completa (.card)
   try {
       const elementToCapture = document.querySelector(".card");
-      
       const canvasCard = await html2canvas(elementToCapture, { 
           backgroundColor: "#f2f4f8",
           useCORS: true,
@@ -676,18 +675,32 @@ document.getElementById("confirmSendBtn").addEventListener("click", async functi
       console.error("Error al generar captura de la carga:", error);
   }
 
+  // Estructura de datos codificada para Google Apps Script
+  const formData = new URLSearchParams();
+  formData.append("fecha", pendingPayload.fecha);
+  formData.append("hora", pendingPayload.hora);
+  formData.append("comprobante", pendingPayload.comprobante);
+  formData.append("vehiculo", pendingPayload.vehiculo);
+  formData.append("centroCosto", pendingPayload.centroCosto);
+  formData.append("kilometros", pendingPayload.kilometros);
+  formData.append("litros", pendingPayload.litros);
+  formData.append("nombre", pendingPayload.nombre);
+  formData.append("cargo", pendingPayload.cargo);
+  formData.append("firma", pendingPayload.firma);
+
   // Envío a Google Apps Script
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    keepalive: true,
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    },
-    body: JSON.stringify(pendingPayload)
-  }).catch(err => {
+  try {
+    await fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: formData.toString()
+    });
+  } catch (err) {
     console.error("Error al guardar en Google Sheets:", err);
-  });
+  }
 
   await new Promise(resolve => setTimeout(resolve, 500));
 
