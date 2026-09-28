@@ -211,7 +211,7 @@ function populateCostCenterDropdown(filter = "") {
 
 function openCostCenterDropdown() {
   if (costCenterWrapper && costCenterDropdown) {
-    costCenterWrapper.classList.add("open");
+    costCenterWrapper.classList.add("open", "dropdown-open");
     costCenterDropdown.classList.add("show");
     populateCostCenterDropdown(costCenterInput.value);
   }
@@ -219,7 +219,7 @@ function openCostCenterDropdown() {
 
 function closeCostCenterDropdown() {
   if (costCenterWrapper && costCenterDropdown) {
-    costCenterWrapper.classList.remove("open");
+    costCenterWrapper.classList.remove("open", "dropdown-open");
     costCenterDropdown.classList.remove("show");
   }
 }
@@ -289,7 +289,7 @@ function populateCargoDropdown(filter = "") {
 
 function openCargoDropdown() {
   if (cargoWrapper && cargoDropdown) {
-    cargoWrapper.classList.add("open");
+    cargoWrapper.classList.add("open", "dropdown-open");
     cargoDropdown.classList.add("show");
     populateCargoDropdown(positionInput.value);
   }
@@ -297,7 +297,7 @@ function openCargoDropdown() {
 
 function closeCargoDropdown() {
   if (cargoWrapper && cargoDropdown) {
-    cargoWrapper.classList.remove("open");
+    cargoWrapper.classList.remove("open", "dropdown-open");
     cargoDropdown.classList.remove("show");
   }
 }
