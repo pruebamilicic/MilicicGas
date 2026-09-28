@@ -871,7 +871,6 @@ body::after {
 ========================= */
 .custom-combobox {
     position: relative;
-    z-index: 10;
 }
 
 .custom-combobox .form-input {
@@ -908,18 +907,19 @@ body::after {
 .custom-dropdown-list {
     display: none;
     position: absolute;
-    top: calc(100% + 6px);
     left: 0;
     right: 0;
+    top: calc(100% + 6px);
+    z-index: 9999;
+    margin: 0;
+    padding: 8px 0;
     background: #ffffff;
-    border: 1.5px solid #e1e4e8;
+    border: 1px solid #e1e1e1;
     border-radius: 12px;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     max-height: 220px;
     overflow-y: auto;
-    z-index: 1000;
     list-style: none;
-    padding: 6px;
 }
 
 .custom-dropdown-list.show {
@@ -938,25 +938,37 @@ body::after {
     }
 }
 
+#costCenterWrapper {
+    z-index: 10001;
+}
+
+#cargoWrapper {
+    z-index: 10000;
+}
+
+.custom-combobox.dropdown-open {
+    z-index: 10002;
+}
+
 .dropdown-item {
-    padding: 10px 14px;
+    padding: 12px 18px;
     font-size: 14.5px;
     font-weight: 500;
     color: #374151;
-    border-radius: 8px;
     cursor: pointer;
+    background: #ffffff;
     transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
 }
 
 .dropdown-item:hover {
-    background: var(--orange-light);
+    background: #fff1e6;
     color: var(--orange-dark);
     font-weight: 700;
     transform: translateX(4px);
 }
 
 .dropdown-empty {
-    padding: 10px 14px;
+    padding: 12px 18px;
     font-size: 14.5px;
     color: #6e7279;
 }
