@@ -178,6 +178,12 @@ const costCenterList = [
     "29820 - Comercial Rental Añelo", "29842 - Admin Añelo"
 ];
 
+/* Devuelve solo el número del centro de costo: "05 - Serv técnico Rosario" -> "05" */
+function soloNumeroCC(texto) {
+  const m = String(texto || "").trim().match(/^\d+/);
+  return m ? m[0] : String(texto || "").trim(); // si escribió algo libre sin número, se manda tal cual
+}
+
 const costCenterInput = document.getElementById("costCenter");
 const costCenterDropdown = document.getElementById("costCenterDropdown");
 const costCenterWrapper = document.getElementById("costCenterWrapper");
@@ -660,7 +666,8 @@ function closeConfirm() {
 }
 
 /* =====================================================
-   CAPTURA COMPLETA DEL FORMULARIO Y ENVÍO A SHEETS + WHATSAPP
+   CAPTURA COMPLETA DEL FORMULARIO Y ENVÍO A SHEETS
+   (el aviso por WhatsApp lo envía ahora el Apps Script)
 ===================================================== */
 async function procesarYEnviarCarga() {
   const confirmBtn = document.getElementById("confirmSendBtn");
@@ -707,23 +714,19 @@ async function procesarYEnviarCarga() {
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "visible";
 
   if (typeof SCRIPT_URL !== "undefined" && pendingPayload) {
+    // Copia del payload: al Sheet va solo el número del centro de costo
+    const payloadSheet = {
+      ...pendingPayload,
+      centroCosto: soloNumeroCC(pendingPayload.centroCosto)
+    };
+
     fetch(SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
       keepalive: true,
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(pendingPayload)
+      body: JSON.stringify(payloadSheet)
     }).catch(err => console.error("Error en Sheets:", err));
-  }
-
-  const PHONE_NUMBER = "5493413855760";
-  const API_KEY = "9974488";
-
-  if (pendingPayload && pendingPayload.nombre) {
-    const mensajeWA = `${pendingPayload.nombre} completo la carga de gasoil`;
-    const urlWA = `https://api.callmebot.com/whatsapp.php?phone=${PHONE_NUMBER}&text=${encodeURIComponent(mensajeWA)}&apikey=${API_KEY}`;
-    
-    fetch(urlWA, { mode: "no-cors" }).catch(err => console.error("Error enviando WhatsApp:", err));
   }
 
   if (typeof incrementReceiptNumber === "function") incrementReceiptNumber();
