@@ -410,8 +410,8 @@ let fireworkSparks = [];
 let fireworkInterval = null;
 
 const FW_COLORS = [
-  "#ff7100", "#ff9500", "#ffd000", "#ff3366",
-  "#00e5ff", "#00e676", "#7c4dff", "#ffffff"
+  "#eeff00", "#fbff00", "#ffd000", "#fffc33",
+  "#4c00ff", "#4c00ff", "#4c00ff", "#4c00ff"
 ];
 
 function initFireworksCanvas() {
