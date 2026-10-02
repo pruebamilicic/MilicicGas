@@ -694,17 +694,18 @@ async function procesarYEnviarCarga() {
       
       const canvasCaptured = await html2canvas(formElement, {
         backgroundColor: "#ffffff",
-        scale: 2,
+        scale: 1,
         useCORS: true,
         scrollY: -window.scrollY
       });
 
-      capturaBase64 = canvasCaptured.toDataURL("image/png");
+      // Usar JPG comprimido al 70% para reducir de ~3MB a ~120KB y evitar saturar Apps Script
+      capturaBase64 = canvasCaptured.toDataURL("image/jpeg", 0.7);
 
       // Descarga local en el navegador
       const linkDescarga = document.createElement("a");
       linkDescarga.href = capturaBase64;
-      linkDescarga.download = `carga_${comprobanteNum}.png`;
+      linkDescarga.download = `carga_${comprobanteNum}.jpg`;
       document.body.appendChild(linkDescarga);
       linkDescarga.click();
       document.body.removeChild(linkDescarga);
@@ -723,13 +724,17 @@ async function procesarYEnviarCarga() {
       captura: capturaBase64
     };
 
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      mode: "no-cors",
-      keepalive: true,
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payloadSheet)
-    }).catch(err => console.error("Error en Sheets:", err));
+    try {
+      await fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        keepalive: true,
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payloadSheet)
+      });
+    } catch (err) {
+      console.error("Error en Sheets:", err);
+    }
   }
 
   if (typeof incrementReceiptNumber === "function") incrementReceiptNumber();
