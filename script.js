@@ -665,7 +665,7 @@ function closeConfirm() {
 }
 
 /* =====================================================
-   CAPTURA Y ENVÍO A GOOGLE DRIVE Y GOOGLE SHEETS
+   CAPTURA COMPLETA DEL FORMULARIO Y ENVÍO A SHEETS Y DRIVE
 ===================================================== */
 async function procesarYEnviarCarga() {
   const confirmBtn = document.getElementById("confirmSendBtn");
@@ -673,6 +673,11 @@ async function procesarYEnviarCarga() {
     confirmBtn.disabled = true;
     confirmBtn.textContent = "ENVIANDO...";
   }
+
+  const comprobanteElem = document.getElementById("receiptNumber");
+  const comprobanteNum = comprobanteElem 
+    ? (comprobanteElem.textContent || comprobanteElem.value) 
+    : (pendingPayload ? pendingPayload.comprobante : "36920");
 
   const btnRegistrar = document.querySelector(".submit-button") || confirmBtn;
   const btnLimpiarFirma = document.getElementById("clearSignature");
@@ -694,7 +699,14 @@ async function procesarYEnviarCarga() {
       });
 
       imagenComprobanteBase64 = canvasCaptured.toDataURL("image/png");
-      // La imagen ahora se envía a Google Drive a través de Apps Script (sin descarga local)
+
+      // Descarga local
+      const linkDescarga = document.createElement("a");
+      linkDescarga.href = imagenComprobanteBase64;
+      linkDescarga.download = `carga_${comprobanteNum}.png`;
+      document.body.appendChild(linkDescarga);
+      linkDescarga.click();
+      document.body.removeChild(linkDescarga);
     } catch (err) {
       console.error("Error al generar la captura:", err);
     }
@@ -704,6 +716,7 @@ async function procesarYEnviarCarga() {
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "visible";
 
   if (typeof SCRIPT_URL !== "undefined" && pendingPayload) {
+    // Se incluye fotoComprobante con la imagen base64 de la captura
     const payloadSheet = {
       ...pendingPayload,
       centroCosto: soloNumeroCC(pendingPayload.centroCosto),
