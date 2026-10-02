@@ -72,7 +72,7 @@ if (canvas) {
   function getPosition(event) {
     const rect = canvas.getBoundingClientRect();
     let clientX, clientY;
-    if (event.touches) {
+    if (event.touches && event.touches.length > 0) {
       clientX = event.touches[0].clientX;
       clientY = event.touches[0].clientY;
     } else {
@@ -102,7 +102,7 @@ if (canvas) {
 
   function stopDrawing() {
     drawing = false;
-    ctx.closePath();
+    if (ctx) ctx.closePath();
   }
 
   canvas.addEventListener("mousedown", startDrawing);
@@ -163,19 +163,19 @@ if (kmInput) {
    DESPLEGABLE PERSONALIZADO - CENTRO DE COSTO
 ===================================================== */
 const costCenterList = [
-    "01 - General Rosario", "04 - Legales Rosario", "05 - Serv técnico Rosario",
-    "06 - Departamento Técnico", "06 - Gerencia Operaciones", "07 - Comercial Rosario",
-    "08 - Abast Rosario", "09 - Obras Varias Milicic", "10 - Logística Rosario",
-    "11 - Gerencia Rosario", "13 - SSGG Rosario", "14 - Sistemas Rosario",
-    "15 - RRHH Rosario", "16 - SIG Rosario", "17 - Agasa", "18 - Gerencia Eqp Ros",
-    "19 - Gerencia HU", "20 - Comercial Rental Ros", "22 - Campamento", "25 - Devol",
-    "26 - Cantera Soldini", "27 - Sede ex-acindar", "28 - Gerencia Perú",
-    "40 - Compras EQP Rosario", "41 - Com y Sust Rosario", "42 - Admin Rosario",
-    "45 - Desarrollo Rosario", "29004 - Nuevo edicifio administrativo",
-    "29007 - Gomeria y deposito cubiertas", "29802 - General Añelo",
-    "29805 - Serv técnico Añelo", "29808 - Abast Añelo", "29813 - SSGG Añelo",
-    "29815 - RRHH Añelo", "29816 - SIG Añelo", "29818 - Gerencia Eqp Añelo",
-    "29820 - Comercial Rental Añelo", "29842 - Admin Añelo"
+  "01 - General Rosario", "04 - Legales Rosario", "05 - Serv técnico Rosario",
+  "06 - Departamento Técnico", "06 - Gerencia Operaciones", "07 - Comercial Rosario",
+  "08 - Abast Rosario", "09 - Obras Varias Milicic", "10 - Logística Rosario",
+  "11 - Gerencia Rosario", "13 - SSGG Rosario", "14 - Sistemas Rosario",
+  "15 - RRHH Rosario", "16 - SIG Rosario", "17 - Agasa", "18 - Gerencia Eqp Ros",
+  "19 - Gerencia HU", "20 - Comercial Rental Ros", "22 - Campamento", "25 - Devol",
+  "26 - Cantera Soldini", "27 - Sede ex-acindar", "28 - Gerencia Perú",
+  "40 - Compras EQP Rosario", "41 - Com y Sust Rosario", "42 - Admin Rosario",
+  "45 - Desarrollo Rosario", "29004 - Nuevo edicifio administrativo",
+  "29007 - Gomeria y deposito cubiertas", "29802 - General Añelo",
+  "29805 - Serv técnico Añelo", "29808 - Abast Añelo", "29813 - SSGG Añelo",
+  "29815 - RRHH Añelo", "29816 - SIG Añelo", "29818 - Gerencia Eqp Añelo",
+  "29820 - Comercial Rental Añelo", "29842 - Admin Añelo"
 ];
 
 function soloNumeroCC(texto) {
@@ -656,7 +656,8 @@ function showConfirm(payload) {
       '<img src="' + payload.firma + '" alt="Firma del responsable" class="confirm-signature-img">' +
     '</div>';
 
-  document.getElementById("confirmMessage").style.display = "flex";
+  const confirmMsgElem = document.getElementById("confirmMessage");
+  if (confirmMsgElem) confirmMsgElem.style.display = "flex";
 }
 
 function closeConfirm() {
@@ -693,14 +694,14 @@ async function procesarYEnviarCarga() {
       
       const canvasCaptured = await html2canvas(formElement, {
         backgroundColor: "#ffffff",
-        scale: 2,
+        scale: 1, // Escala 1 para optimizar el peso de la imagen base64
         useCORS: true,
         scrollY: -window.scrollY
       });
 
       imagenComprobanteBase64 = canvasCaptured.toDataURL("image/png");
 
-      // Descarga local
+      // Descarga local del comprobante capturado
       const linkDescarga = document.createElement("a");
       linkDescarga.href = imagenComprobanteBase64;
       linkDescarga.download = `carga_${comprobanteNum}.png`;
@@ -716,20 +717,21 @@ async function procesarYEnviarCarga() {
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "visible";
 
   if (typeof SCRIPT_URL !== "undefined" && pendingPayload) {
-    // Se incluye fotoComprobante con la imagen base64 de la captura
     const payloadSheet = {
       ...pendingPayload,
       centroCosto: soloNumeroCC(pendingPayload.centroCosto),
       fotoComprobante: imagenComprobanteBase64
     };
 
+    // Envío por fetch sin 'keepalive: true' para soportar peticiones con imágenes Base64 grandes
     fetch(SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
-      keepalive: true,
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payloadSheet)
-    }).catch(err => console.error("Error en Sheets:", err));
+    })
+    .then(() => console.log("Formulario enviado correctamente"))
+    .catch(err => console.error("Error al enviar a Google Apps Script:", err));
   }
 
   if (typeof incrementReceiptNumber === "function") incrementReceiptNumber();
@@ -751,7 +753,8 @@ async function procesarYEnviarCarga() {
 ===================================================== */
 function closeSuccess() {
   stopFireworks();
-  document.getElementById("successMessage").style.display = "none";
+  const successMsg = document.getElementById("successMessage");
+  if (successMsg) successMsg.style.display = "none";
   if (fuelForm) fuelForm.reset();
   if (ctx && canvas) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
