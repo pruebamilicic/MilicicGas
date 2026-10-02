@@ -181,7 +181,7 @@ const costCenterList = [
 /* Devuelve solo el número del centro de costo: "05 - Serv técnico Rosario" -> "05" */
 function soloNumeroCC(texto) {
   const m = String(texto || "").trim().match(/^\d+/);
-  return m ? m[0] : String(texto || "").trim(); // si escribió algo libre sin número, se manda tal cual
+  return m ? m[0] : String(texto || "").trim();
 }
 
 const costCenterInput = document.getElementById("costCenter");
@@ -666,8 +666,7 @@ function closeConfirm() {
 }
 
 /* =====================================================
-   CAPTURA COMPLETA DEL FORMULARIO Y ENVÍO A SHEETS
-   (el aviso por WhatsApp lo envía ahora el Apps Script)
+   CAPTURA Y ENVÍO A GOOGLE SHEETS + GOOGLE DRIVE
 ===================================================== */
 async function procesarYEnviarCarga() {
   const confirmBtn = document.getElementById("confirmSendBtn");
@@ -687,6 +686,8 @@ async function procesarYEnviarCarga() {
   if (btnRegistrar) btnRegistrar.style.visibility = "hidden";
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "hidden";
 
+  let capturaBase64 = "";
+
   if (typeof html2canvas !== "undefined") {
     try {
       const formElement = document.querySelector(".card") || document.querySelector("form") || document.body;
@@ -698,9 +699,11 @@ async function procesarYEnviarCarga() {
         scrollY: -window.scrollY
       });
 
-      const imagenData = canvasCaptured.toDataURL("image/png");
+      capturaBase64 = canvasCaptured.toDataURL("image/png");
+
+      // Descarga local en el navegador
       const linkDescarga = document.createElement("a");
-      linkDescarga.href = imagenData;
+      linkDescarga.href = capturaBase64;
       linkDescarga.download = `carga_${comprobanteNum}.png`;
       document.body.appendChild(linkDescarga);
       linkDescarga.click();
@@ -714,10 +717,10 @@ async function procesarYEnviarCarga() {
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "visible";
 
   if (typeof SCRIPT_URL !== "undefined" && pendingPayload) {
-    // Copia del payload: al Sheet va solo el número del centro de costo
     const payloadSheet = {
       ...pendingPayload,
-      centroCosto: soloNumeroCC(pendingPayload.centroCosto)
+      centroCosto: soloNumeroCC(pendingPayload.centroCosto),
+      captura: capturaBase64
     };
 
     fetch(SCRIPT_URL, {
