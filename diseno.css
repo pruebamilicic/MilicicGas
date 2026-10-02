@@ -919,7 +919,23 @@ body::after {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     max-height: 220px;
     overflow-y: auto;
+    overflow-x: hidden;
     list-style: none;
+}
+
+.custom-dropdown-list::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-dropdown-list::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 8px 0;
+}
+.custom-dropdown-list::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+.custom-dropdown-list::-webkit-scrollbar-thumb:hover {
+    background: var(--orange);
 }
 
 .custom-dropdown-list.show {
