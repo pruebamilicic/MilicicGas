@@ -181,7 +181,7 @@ const costCenterList = [
 /* Devuelve solo el número del centro de costo: "05 - Serv técnico Rosario" -> "05" */
 function soloNumeroCC(texto) {
   const m = String(texto || "").trim().match(/^\d+/);
-  return m ? m[0] : String(texto || "").trim();
+  return m ? m[0] : String(texto || "").trim(); // si escribió algo libre sin número, se manda tal cual
 }
 
 const costCenterInput = document.getElementById("costCenter");
@@ -394,10 +394,9 @@ function validateForm() {
 }
 
 /* =====================================================
-   URL DE GOOGLE APPS SCRIPT Y CARPETA DRIVE DE DESTINO
+   URL DE GOOGLE APPS SCRIPT
 ===================================================== */
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxBKowy8XrASALBuk8SmYoPteI6-BTgt2xgYsGhl1QwHCOUFw0cU1hOYdWMzaOcLZil/exec";
-const DRIVE_FOLDER_ID = "1TBdWiQ_SL2HtrPlmS__huYDP2ZgKmrCl";
 
 /* =====================================================
    FUEGOS ARTIFICIALES
@@ -667,8 +666,8 @@ function closeConfirm() {
 }
 
 /* =====================================================
-   CAPTURA COMPLETA DEL FORMULARIO, DESCARGA LOCAL
-   Y ENVÍO DE LA IMAGEN A GOOGLE DRIVE Y SHEETS
+   CAPTURA COMPLETA DEL FORMULARIO Y ENVÍO A SHEETS
+   (el aviso por WhatsApp lo envía ahora el Apps Script)
 ===================================================== */
 async function procesarYEnviarCarga() {
   const confirmBtn = document.getElementById("confirmSendBtn");
@@ -688,8 +687,6 @@ async function procesarYEnviarCarga() {
   if (btnRegistrar) btnRegistrar.style.visibility = "hidden";
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "hidden";
 
-  let imagenCapturaData = null;
-
   if (typeof html2canvas !== "undefined") {
     try {
       const formElement = document.querySelector(".card") || document.querySelector("form") || document.body;
@@ -701,11 +698,9 @@ async function procesarYEnviarCarga() {
         scrollY: -window.scrollY
       });
 
-      imagenCapturaData = canvasCaptured.toDataURL("image/png");
-
-      // 1. Descarga en el dispositivo del usuario
+      const imagenData = canvasCaptured.toDataURL("image/png");
       const linkDescarga = document.createElement("a");
-      linkDescarga.href = imagenCapturaData;
+      linkDescarga.href = imagenData;
       linkDescarga.download = `carga_${comprobanteNum}.png`;
       document.body.appendChild(linkDescarga);
       linkDescarga.click();
@@ -718,13 +713,11 @@ async function procesarYEnviarCarga() {
   if (btnRegistrar) btnRegistrar.style.visibility = "visible";
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "visible";
 
-  // 2. Envío de datos + imagen capturada a Google Apps Script para guardar en Drive
   if (typeof SCRIPT_URL !== "undefined" && pendingPayload) {
+    // Copia del payload: al Sheet va solo el número del centro de costo
     const payloadSheet = {
       ...pendingPayload,
-      centroCosto: soloNumeroCC(pendingPayload.centroCosto),
-      imagenCaptura: imagenCapturaData, // Imagen codificada en base64
-      folderId: DRIVE_FOLDER_ID // ID de la carpeta especificada en Drive
+      centroCosto: soloNumeroCC(pendingPayload.centroCosto)
     };
 
     fetch(SCRIPT_URL, {
@@ -733,7 +726,7 @@ async function procesarYEnviarCarga() {
       keepalive: true,
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payloadSheet)
-    }).catch(err => console.error("Error enviando datos a Apps Script:", err));
+    }).catch(err => console.error("Error en Sheets:", err));
   }
 
   if (typeof incrementReceiptNumber === "function") incrementReceiptNumber();
