@@ -178,10 +178,9 @@ const costCenterList = [
     "29820 - Comercial Rental Añelo", "29842 - Admin Añelo"
 ];
 
-/* Devuelve solo el número del centro de costo: "05 - Serv técnico Rosario" -> "05" */
 function soloNumeroCC(texto) {
   const m = String(texto || "").trim().match(/^\d+/);
-  return m ? m[0] : String(texto || "").trim(); // si escribió algo libre sin número, se manda tal cual
+  return m ? m[0] : String(texto || "").trim();
 }
 
 const costCenterInput = document.getElementById("costCenter");
@@ -666,8 +665,7 @@ function closeConfirm() {
 }
 
 /* =====================================================
-   CAPTURA COMPLETA DEL FORMULARIO Y ENVÍO A SHEETS
-   (el aviso por WhatsApp lo envía ahora el Apps Script)
+   CAPTURA COMPLETA DEL FORMULARIO Y ENVÍO A SHEETS Y DRIVE
 ===================================================== */
 async function procesarYEnviarCarga() {
   const confirmBtn = document.getElementById("confirmSendBtn");
@@ -687,6 +685,8 @@ async function procesarYEnviarCarga() {
   if (btnRegistrar) btnRegistrar.style.visibility = "hidden";
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "hidden";
 
+  let imagenComprobanteBase64 = "";
+
   if (typeof html2canvas !== "undefined") {
     try {
       const formElement = document.querySelector(".card") || document.querySelector("form") || document.body;
@@ -698,9 +698,11 @@ async function procesarYEnviarCarga() {
         scrollY: -window.scrollY
       });
 
-      const imagenData = canvasCaptured.toDataURL("image/png");
+      imagenComprobanteBase64 = canvasCaptured.toDataURL("image/png");
+
+      // Descarga local
       const linkDescarga = document.createElement("a");
-      linkDescarga.href = imagenData;
+      linkDescarga.href = imagenComprobanteBase64;
       linkDescarga.download = `carga_${comprobanteNum}.png`;
       document.body.appendChild(linkDescarga);
       linkDescarga.click();
@@ -714,10 +716,11 @@ async function procesarYEnviarCarga() {
   if (btnLimpiarFirma) btnLimpiarFirma.style.visibility = "visible";
 
   if (typeof SCRIPT_URL !== "undefined" && pendingPayload) {
-    // Copia del payload: al Sheet va solo el número del centro de costo
+    // Se incluye fotoComprobante con la imagen base64 de la captura
     const payloadSheet = {
       ...pendingPayload,
-      centroCosto: soloNumeroCC(pendingPayload.centroCosto)
+      centroCosto: soloNumeroCC(pendingPayload.centroCosto),
+      fotoComprobante: imagenComprobanteBase64
     };
 
     fetch(SCRIPT_URL, {
